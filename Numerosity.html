@@ -54,27 +54,55 @@ const timerInterval = setInterval(() => {
 function generateRandomNumbers(level) {
   // Increase range as the level goes up
   const maxNumber = 20 + level * 5; // Range increases with levels
-  return Array.from({ length: 5 }, () => Math.floor(Math.random() * maxNumber) + 1);
+  let nums = Array.from({ length: 5 }, () => Math.floor(Math.random() * maxNumber) + 1);
+  
+  // Calculate a target result that is guaranteed to be achievable
+  setTargetResultWithSolution(nums);
+  
+  return nums;
+}
+
+function setTargetResultWithSolution(nums) {
+  // Randomly select 2 or 3 numbers from nums
+  let selectedNums;
+  if (Math.random() < 0.5) {
+    // Select 2 numbers
+    selectedNums = [nums[Math.floor(Math.random() * nums.length)], nums[Math.floor(Math.random() * nums.length)]];
+  } else {
+    // Select 3 numbers
+    selectedNums = [
+      nums[Math.floor(Math.random() * nums.length)],
+      nums[Math.floor(Math.random() * nums.length)],
+      nums[Math.floor(Math.random() * nums.length)]
+    ];
+  }
+  
+  // Ensure unique selection for 2-number scenario
+  if (selectedNums.length === 2 && selectedNums[0] === selectedNums[1]) {
+    selectedNums[1] = nums[(nums.indexOf(selectedNums[1]) + 1) % nums.length];
+  }
+  
+  // Calculate the target result based on the selected numbers and operation
+  targetResult = selectedNums.reduce((acc, num) => {
+    switch (operation) {
+      case '+': return acc + num;
+      case '-': return acc - num;
+      case '*': return acc * num;
+      default: return acc;
+    }
+  });
+  
+  // Ensure targetResult is a valid 3-digit number for mental math
+  if (targetResult < 10 || targetResult > 999) {
+    setTargetResultWithSolution(nums); // Recalculate if out of range
+  } else {
+    document.getElementById('target-result').innerText = targetResult;
+  }
 }
 
 function getRandomOperation() {
   const operations = ['+', '-']; // Use addition and subtraction for simplicity
   return operations[Math.floor(Math.random() * operations.length)];
-}
-
-function calculateTargetResult(op, numbers) {
-  // Ensure target is within 100-999 for mental math
-  let result;
-  do {
-    result = numbers.reduce((acc, num) => {
-      switch (op) {
-        case '+': return acc + num;
-        case '-': return acc - num;
-        default: return acc;
-      }
-    });
-  } while (result < 10 || result > 999); // Adjust to suitable range as per level
-  return result;
 }
 
 function renderNumberButtons(numbers) {
@@ -128,16 +156,6 @@ function nextLevel() {
   // Increase difficulty by changing target result and number range
   operation = getRandomOperation();
   document.getElementById('operation').innerText = operation;
-  targetResult = calculateTargetResult(operation, numbers);
-  document.getElementById('target-result').innerText = targetResult;
-
-  // Optionally adjust selection limits for difficulty
-  if (level % 3 === 0) {
-    maxNumbersToSelect = 3; // Adjust max numbers to select for difficulty
-  }
-  if (level > 5) {
-    minNumbersToSelect = 3; // Increase minimum number selection for difficulty
-  }
 }
 
 function resetSelections() {
@@ -147,9 +165,7 @@ function resetSelections() {
 
 // Set initial values
 operation = getRandomOperation();
-targetResult = calculateTargetResult(operation, numbers);
-document.getElementById('operation').innerText = operation;
-document.getElementById('target-result').innerText = targetResult;
+renderNumberButtons(numbers);
 
 </script>
 
