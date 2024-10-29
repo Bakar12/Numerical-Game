@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Numerosity Game</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; }
+  .game-container { max-width: 400px; margin: auto; }
+  .number-button { width: 60px; height: 60px; font-size: 24px; margin: 10px; }
+  .number-button.selected { background-color: #4CAF50; color: white; }
+  .timer, .level { font-size: 24px; margin: 10px; }
+</style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>Numerosity Game</h1>
+  <div class="level">Level: <span id="level">1</span></div>
+  <div class="timer">Time Left: <span id="time-left">180</span> seconds</div>
+  <div>Operation: <span id="operation">+</span></div>
+  <div>Target Result: <span id="target-result">0</span></div>
+  <div id="number-buttons"></div>
+</div>
+
+<script>
+let level = 1;
+let timeLeft = 180; // in seconds
+let operation = '+';
+let targetResult = 0;
+let selectedNumbers = [];
+let maxNumbersToSelect = 3; // Limit of numbers that can be selected
+let minNumbersToSelect = 2; // Minimum numbers to select
+let numbers = generateRandomNumbers(level);
+
+// Initialize the game
+document.getElementById('level').innerText = level;
+document.getElementById('time-left').innerText = timeLeft;
+document.getElementById('operation').innerText = operation;
+document.getElementById('target-result').innerText = targetResult;
+renderNumberButtons(numbers);
+
+// Timer countdown
+const timerInterval = setInterval(() => {
+  if (timeLeft > 0) {
+    timeLeft--;
+    document.getElementById('time-left').innerText = timeLeft;
+  } else {
+    alert('Time’s up! Game Over.');
+    clearInterval(timerInterval);
+  }
+}, 1000);
+
+function generateRandomNumbers(level) {
+  // Increase range as the level goes up
+  const maxNumber = 20 + level * 5; // Range increases with levels
+  return Array.from({ length: 5 }, () => Math.floor(Math.random() * maxNumber) + 1);
+}
+
+function getRandomOperation() {
+  const operations = ['+', '-']; // Use addition and subtraction for simplicity
+  return operations[Math.floor(Math.random() * operations.length)];
+}
+
+function calculateTargetResult(op, numbers) {
+  // Ensure target is within 100-999 for mental math
+  let result;
+  do {
+    result = numbers.reduce((acc, num) => {
+      switch (op) {
+        case '+': return acc + num;
+        case '-': return acc - num;
+        default: return acc;
+      }
+    });
+  } while (result < 10 || result > 999); // Adjust to suitable range as per level
+  return result;
+}
+
+function renderNumberButtons(numbers) {
+  const numberButtonsContainer = document.getElementById('number-buttons');
+  numberButtonsContainer.innerHTML = ''; // Clear existing buttons
+
+  numbers.forEach(num => {
+    const button = document.createElement('button');
+    button.innerText = num;
+    button.className = 'number-button';
+    button.onclick = () => handleNumberClick(button, num);
+    numberButtonsContainer.appendChild(button);
+  });
+}
+
+function handleNumberClick(button, num) {
+  // If already selected, ignore click
+  if (button.classList.contains('selected')) return;
+  
+  // Highlight the button to show it's selected
+  button.classList.add('selected');
+  selectedNumbers.push(num);
+
+  // Check if we have selected the required numbers
+  if (selectedNumbers.length >= minNumbersToSelect && selectedNumbers.length <= maxNumbersToSelect) {
+    const result = selectedNumbers.reduce((acc, n) => {
+      switch (operation) {
+        case '+': return acc + n;
+        case '-': return acc - n;
+        default: return acc;
+      }
+    }, 0);
+
+    if (result === targetResult) {
+      alert('Correct! Moving to the next level.');
+      nextLevel();
+    } else if (selectedNumbers.length === maxNumbersToSelect) {
+      alert('Incorrect! Try again.');
+      resetSelections();
+    }
+  }
+}
+
+function nextLevel() {
+  level++;
+  document.getElementById('level').innerText = level;
+  selectedNumbers = [];
+  numbers = generateRandomNumbers(level);
+  renderNumberButtons(numbers);
+
+  // Increase difficulty by changing target result and number range
+  operation = getRandomOperation();
+  document.getElementById('operation').innerText = operation;
+  targetResult = calculateTargetResult(operation, numbers);
+  document.getElementById('target-result').innerText = targetResult;
+
+  // Optionally adjust selection limits for difficulty
+  if (level % 3 === 0) {
+    maxNumbersToSelect = 3; // Adjust max numbers to select for difficulty
+  }
+  if (level > 5) {
+    minNumbersToSelect = 3; // Increase minimum number selection for difficulty
+  }
+}
+
+function resetSelections() {
+  selectedNumbers = [];
+  document.querySelectorAll('.number-button').forEach(button => button.classList.remove('selected'));
+}
+
+// Set initial values
+operation = getRandomOperation();
+targetResult = calculateTargetResult(operation, numbers);
+document.getElementById('operation').innerText = operation;
+document.getElementById('target-result').innerText = targetResult;
+
+</script>
+
+</body>
+</html>
